@@ -1,21 +1,32 @@
-name: build
-on: [push, workflow_dispatch]
+name: Build Vibe Client
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - run: unzip -q vibeclient.zip
-      - uses: actions/setup-java@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 25
-      - uses: gradle/actions/setup-gradle@v4
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Vibe Client
+        run: gradle build --no-daemon
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
         with:
-          gradle-version: 9.4.1
-      - run: gradle build --no-daemon
-        working-directory: vibeclient
-      - uses: actions/upload-artifact@v4
-        with:
-          name: vibeclient-jar
-          path: vibeclient/build/libs/*.jar
+          name: vibe-client-build
+          path: build/libs/*.jar
