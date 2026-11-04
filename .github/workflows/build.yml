@@ -1,3 +1,4 @@
+```yaml
 name: Build Vibe Client
 
 on:
@@ -10,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Download repository
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -22,11 +23,31 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Find Gradle project
+        id: project
+        shell: bash
+        run: |
+          echo "Repository contents:"
+          ls -la
+          echo "Searching for Gradle files..."
+          FILE=$(find . -type f \( -name settings.gradle -o -name settings.gradle.kts -o -name build.gradle -o -name build.gradle.kts \) -not -path './.git/*' | head -n 1)
+
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No Gradle build files found!"
+            exit 1
+          fi
+
+          DIR=$(dirname "$FILE")
+          echo "Found Gradle project in: $DIR"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+
       - name: Build Vibe Client
         run: gradle build --no-daemon
+        working-directory: ${{ steps.project.outputs.dir }}
 
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: vibe-client-build
-          path: build/libs/*.jar
+          path: '**/build/libs/*.jar'
+          if-no-files-found: error
